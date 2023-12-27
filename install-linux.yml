@@ -1,7 +1,6 @@
 ---
 - name: Configure zabbix agent for veeam agent
-  hosts: all
-  remote_user: serwis
+  hosts: linux
   become: yes
   gather_facts: no
   tasks:
@@ -39,7 +38,7 @@
     
     - name: Copy veeamlog.conf
       copy:
-        src: ./config/veeamlog.conf
+        src: ./config/veeamlog-linux.conf
         dest: /etc/zabbix/zabbix_agentd.conf.d/veeamlog.conf
 
     - name: Add zabbix server address to config

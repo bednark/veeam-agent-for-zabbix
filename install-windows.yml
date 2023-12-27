@@ -1,0 +1,30 @@
+---
+- name: Configure zabbix agent for veeam agent
+  hosts: dc
+  gather_facts: no
+  tasks:
+    - name: Install zabbix agent
+      win_chocolatey:
+        name: zabbix-agent2
+        state: present
+        params: /SERVER:10.10.6.249
+    
+    - name: Ensure script directory exist
+      win_file:
+        path: 'C:\Program Files\Zabbix Agent 2\scripts'
+        state: directory
+
+    - name: Copy veeamlog.ps1
+      win_copy:
+        src: ./config/veeamlog.ps1
+        dest: 'C:\Program Files\Zabbix Agent 2\scripts\veeamlog.ps1'
+
+    - name: Copy veeamlog.conf
+      win_copy:
+        src: ./config/veeamlog-windows.conf
+        dest: 'C:\Program Files\Zabbix Agent 2\zabbix_agent2.d\veeamlog.conf'
+
+    - name: Restart zabbix-agent service
+      win_service:
+        name: 'Zabbix Agent 2'
+        state: restarted
