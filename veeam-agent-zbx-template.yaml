@@ -1,0 +1,43 @@
+zabbix_export:
+  version: '6.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 2bec1f1acfe542e1bb519e19c6e6bb55
+      template: 'Veeam Agent Linux'
+      name: 'Veeam Agent Linux'
+      groups:
+        - name: Templates/Applications
+      discovery_rules:
+        - uuid: 93314b8afc6646d397b5d301df88181b
+          name: 'Job Info'
+          key: veeamlog
+          delay: 60m
+          item_prototypes:
+            - uuid: e0120c0c7ef0403491b6c363d416f627
+              name: 'Veeam Agent Job Status'
+              key: 'veeamlog.Result[''{#JOB_NAME}'']'
+              delay: 60m
+              trigger_prototypes:
+                - uuid: 5d31459cd2174c94ba3ffc79242b03a7
+                  expression: 'last(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''])=0'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''])=1'
+                  name: 'Backup {#JOB_NAME} Error'
+                  opdata: '{#DESCRIPTION}'
+                  priority: HIGH
+                  manual_close: 'YES'
+                - uuid: 549e700abed8441f9ea9afa2cd7fb929
+                  expression: 'nodata(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''],7200s)=1'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'nodata(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''],7200s)=0'
+                  name: 'No data on Jobs'
+                  priority: AVERAGE
+          lld_macro_paths:
+            - lld_macro: '{#DESCRIPTION}'
+              path: $.description
+            - lld_macro: '{#JOB_NAME}'
+              path: $.job_name
+            - lld_macro: '{#JOB_STATUS}'
+              path: $.job_status
