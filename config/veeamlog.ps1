@@ -1,26 +1,29 @@
 function Get-Result {
   $LogPath = 'C:\ProgramData\Veeam\Endpoint'
-  $JobDir = Get-ChildItem -Directory -Path $LogPath | Sort-Object LastWriteTime | Select-Object -First 1
-  $JobDirPath = $JobDir.FullName
-  $JobDirName = $JobDir.Name
 
-  if (-not $JobDirPath) {
+  if (-not $LogPath) {
     Write-Output '[{"job_name": "", "job_status": "FAILED", "description": "Job directory not found"}]'
     exit
   }
 
-  $LogFileName = 'Agent.' + $JobDirName + '.Index.log'
+  $LogFile = Get-ChildItem -Filter Job.*.Backup.log -Recurse -Path $LogPath | Sort-Object LastWriteTime | Select-Object -First 1
 
-  $LogFilePath = Join-Path $JobDirPath $LogFileName
+  if (-not $LogFile.FullName) {
+    Write-Output '[{"job_name": "", "job_status": "FAILED", "description": "Job file not found"}]'
+    exit
+  }
 
-  $LogStdout = Get-Content -Path $LogFilePath -Tail 20
+  $LogStdout = Get-Content -Path $LogFile.FullName -Tail 50
+  $JobName = ($LogFile.Name -split "\.")[1]
 
-  if ($LogStdout -match 'The agent session has finished successfully.') {
-    Write-Output (-join('[{"job_name": "', $JobDirName, '", "job_status": "SUCCESS", "description": "Job ended with success"}]'))
+  if ($LogStdout -match "status: 'Success'") {
+    Write-Output (-join('[{"job_name": "', $JobName, '", "job_status": "SUCCESS", "description": "Job ended with success"}]'))
+  }
+  elseif ($LogStdout -match "status: 'Warning'") {
+    Write-Output (-join('[{"job_name": "', $JobName, '", "job_status": "WARNING", "description": "Job ended with warning"}]'))
   }
   else {
-    Write-Output (-join('[{"job_name": "', $JobDirName, '", "job_status": "FAILED", "description": "Job ended with fail"}]'))
-    Write-Output 
+    Write-Output (-join('[{"job_name": "', $JobName, '", "job_status": "FAILED", "description": "Job ended with fail"}]'))
   }
 }
 
@@ -35,6 +38,9 @@ if ($args[0] -eq 'json') {
 }
 elseif ($args[0] -eq 'num') {
   if ($JobResult -match 'SUCCESS') {
+    Write-Output 2
+  }
+  elseif ($JobResult -match 'WARNING') {
     Write-Output 1
   }
   else {

@@ -46,7 +46,7 @@ if [ $1 = 'json' ] ; then
   echo $JOB_RESULT
 elif [ $1 = 'num' ] ; then
   if [[ $JOB_RESULT =~ 'SUCCESS' ]] ; then
-    echo 1
+    echo 2
   else
     echo 0
   fi
