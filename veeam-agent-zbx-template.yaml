@@ -5,8 +5,8 @@ zabbix_export:
       name: Templates/Applications
   templates:
     - uuid: 2bec1f1acfe542e1bb519e19c6e6bb55
-      template: 'Veeam Agent Linux'
-      name: 'Veeam Agent Linux'
+      template: 'Veeam Agent'
+      name: 'Veeam Agent'
       groups:
         - name: Templates/Applications
       discovery_rules:
@@ -21,19 +21,28 @@ zabbix_export:
               delay: 60m
               trigger_prototypes:
                 - uuid: 5d31459cd2174c94ba3ffc79242b03a7
-                  expression: 'last(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''])=0'
+                  expression: 'last(/Veeam Agent/veeamlog.Result[''{#JOB_NAME}''])=0'
                   recovery_mode: RECOVERY_EXPRESSION
-                  recovery_expression: 'last(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''])=1'
+                  recovery_expression: 'last(/Veeam Agent/veeamlog.Result[''{#JOB_NAME}''])=2'
                   name: 'Backup {#JOB_NAME} Error'
                   opdata: '{#DESCRIPTION}'
                   priority: HIGH
                   manual_close: 'YES'
-                - uuid: 549e700abed8441f9ea9afa2cd7fb929
-                  expression: 'nodata(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''],7200s)=1'
+                - uuid: 96b5f26c9bb4486f980bcf549b6a6ccc
+                  expression: 'last(/Veeam Agent/veeamlog.Result[''{#JOB_NAME}''])=1'
                   recovery_mode: RECOVERY_EXPRESSION
-                  recovery_expression: 'nodata(/Veeam Agent Linux/veeamlog.Result[''{#JOB_NAME}''],7200s)=0'
-                  name: 'No data on Jobs'
+                  recovery_expression: 'last(/Veeam Agent/veeamlog.Result[''{#JOB_NAME}''])=2'
+                  name: 'Backup {#JOB_NAME} Warning'
+                  opdata: '{#DESCRIPTION}'
                   priority: AVERAGE
+                  manual_close: 'YES'
+                - uuid: 549e700abed8441f9ea9afa2cd7fb929
+                  expression: 'nodata(/Veeam Agent/veeamlog.Result[''{#JOB_NAME}''],7200s)=1'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'nodata(/Veeam Agent/veeamlog.Result[''{#JOB_NAME}''],7200s)=0'
+                  name: 'No data on Jobs'
+                  priority: WARNING
+                  manual_close: 'YES'
           lld_macro_paths:
             - lld_macro: '{#DESCRIPTION}'
               path: $.description
