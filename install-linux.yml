@@ -2,19 +2,11 @@
 - name: Configure zabbix agent for veeam agent
   hosts: linux
   become: yes
-  gather_facts: no
   tasks:
     - name: Install zabbix agent
-      apt:
+      package:
         name: zabbix-agent
         state: present
-        update_cache: yes
-
-    - name: Add zabbix to sudo group
-      user:
-        name: zabbix
-        groups: sudo
-        append: yes
 
     - name: Add zabbix to sudoers
       lineinfile:
@@ -35,19 +27,33 @@
         owner: zabbix
         group: zabbix
         mode: 0755
+      register: veeamlog_sh
     
-    - name: Copy veeamlog.conf
+    - name: Copy veeamlog.conf for Ubuntu
       copy:
         src: ./config/veeamlog-linux.conf
         dest: /etc/zabbix/zabbix_agentd.conf.d/veeamlog.conf
+      register: veeamlog_conf_ubuntu
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Copy veeamlog.conf for CentOS
+      copy:
+        src: ./config/veeamlog-linux.conf
+        dest: /etc/zabbix/zabbix_agentd.d/veeamlog.conf
+      register: veeamlog_conf_centos
+      when: ansible_distribution == 'CentOS'
 
     - name: Add zabbix server address to config
       lineinfile:
         path: /etc/zabbix/zabbix_agentd.conf
         regexp: Server=127.0.0.1
         line: Server=10.10.6.249
+      register: zbx_cfg
 
     - name: Restart zabbix-agent service
       service:
         name: zabbix-agent
         state: restarted
+      when: >
+        zbx_cfg.changed or veeamlog_conf_ubuntu.changed or
+        veeamlog_conf_centos.changed or veeamlog_sh.changed
