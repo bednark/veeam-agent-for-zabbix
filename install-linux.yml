@@ -2,58 +2,35 @@
 - name: Configure zabbix agent for veeam agent
   hosts: linux
   become: yes
+  gather_facts: no
   tasks:
-    - name: Install zabbix agent
-      package:
-        name: zabbix-agent
-        state: present
+    - name: Ensure required directories exists
+      file:
+        path: /var/lib/zabbix/veeam
+        state: directory
 
     - name: Add zabbix to sudoers
       lineinfile:
         path: /etc/sudoers
         state: present
-        insertafter: 'serwis ALL=(ALL) NOPASSWD: ALL'
-        line: 'zabbix ALL=(ALL) NOPASSWD: ALL'
-
-    - name: Ensure script directory exist
-      file:
-        path: /etc/zabbix/scripts
-        state: directory
+        line: 'zabbix  ALL=(ALL)     NOPASSWD: ALL'
 
     - name: Copy veeamlog.sh
       copy:
         src: ./config/veeamlog.sh
-        dest: /etc/zabbix/scripts/veeamlog.sh
+        dest: /var/lib/zabbix/veeam/veeamlog.sh
         owner: zabbix
         group: zabbix
         mode: 0755
       register: veeamlog_sh
     
-    - name: Copy veeamlog.conf for Ubuntu
+    - name: Copy veeamlog.conf
       copy:
         src: ./config/veeamlog-linux.conf
-        dest: /etc/zabbix/zabbix_agentd.conf.d/veeamlog.conf
-      register: veeamlog_conf_ubuntu
-      when: ansible_distribution == 'Ubuntu'
-
-    - name: Copy veeamlog.conf for CentOS
-      copy:
-        src: ./config/veeamlog-linux.conf
-        dest: /etc/zabbix/zabbix_agentd.d/veeamlog.conf
-      register: veeamlog_conf_centos
-      when: ansible_distribution == 'CentOS'
-
-    - name: Add zabbix server address to config
-      lineinfile:
-        path: /etc/zabbix/zabbix_agentd.conf
-        regexp: Server=127.0.0.1
-        line: Server=10.10.6.249
-      register: zbx_cfg
+        dest: /etc/zabbix/zabbix_agentd.d/template_veeamlog.conf
+      register: veeamlog_conf
 
     - name: Restart zabbix-agent service
       service:
         name: zabbix-agent
         state: restarted
-      when: >
-        zbx_cfg.changed or veeamlog_conf_ubuntu.changed or
-        veeamlog_conf_centos.changed or veeamlog_sh.changed

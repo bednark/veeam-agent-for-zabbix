@@ -9,7 +9,7 @@ function get_result () {
     exit 0
   fi
 
-  SESSION_DIR=$(sudo ls -t $LOG_PATH/$JOB_DIR -I *.tar.gz | head -n 1)
+  SESSION_DIR=$(sudo ls $LOG_PATH/$JOB_DIR -I *.tar.gz | sort -r | head -n 1)
   LOG_FILE_PATH=$LOG_PATH'/'$JOB_DIR'/'$SESSION_DIR/Job.log
 
   if [ -z $(sudo ls $LOG_PATH'/'$JOB_DIR'/'$SESSION_DIR | grep Job.log) ] ; then
